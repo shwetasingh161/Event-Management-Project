@@ -1,0 +1,36 @@
+from django.core.management.base import BaseCommand
+from django.contrib.auth import get_user_model
+from events.models import Event
+from django.utils import timezone
+from datetime import timedelta
+
+User = get_user_model()
+
+class Command(BaseCommand):
+    help = "Seed DB with an admin user and a sample event."
+
+    def handle(self, *args, **options):
+        admin_email = "admin@example.com"
+        password = "AdminPass123!"
+        if not User.objects.filter(username=admin_email).exists():
+            User.objects.create_superuser(username=admin_email, email=admin_email, password=password)
+            self.stdout.write(self.style.SUCCESS(f"Created admin: {admin_email} / {password}"))
+        else:
+            self.stdout.write("Admin already exists.")
+
+        if not Event.objects.filter(title="Sample Tech Meetup").exists():
+            now = timezone.now()
+            ev = Event.objects.create(
+                title="Sample Tech Meetup",
+                description="A demo technical meetup.",
+                category="Tech",
+                venue="Online",
+                starts_at=now + timedelta(days=3),
+                ends_at=now + timedelta(days=3, hours=2),
+                capacity=3,
+                is_published=True,
+                created_by=User.objects.filter(is_superuser=True).first()
+            )
+            self.stdout.write(self.style.SUCCESS(f"Created sample event: {ev.title}"))
+        else:
+            self.stdout.write("Sample event exists.")
